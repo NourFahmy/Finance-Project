@@ -1,0 +1,28 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+senate_stocks = read.csv('C:/Users/nour/Downloads/aggregate_stocks_prices_nnmf.csv')
+senate_stocks = senate_stocks[,c("ACN" , "AON" , "BIO"  ,"DGX",  "HOLX", "MMC" , "PEP",  "WEC" , "WST"  ,"YUM")]
+senate_stocks = tail(senate_stocks, 5000)
+```
+
+```{r}
+#senate_stocks = as.matrix(senate_stocks)
+
+weights = c(0.046278393, 0.042471466, 0.032913011, 0.144214569, 0.052060008, 0.154975490, 0.303286111,0.049080230, 0.004526453, 0.170194268)
+#senate_stocks %*% weights
+time_df = cbind(senate_stocks$date, as.matrix(senate_stocks[,colnames(senate_stocks)[2:11]]) %*% weights)
+head(time_df)
+```
+
+
+```{r}
+library("forecast")
+#train_baseline = baseline_data[1:474,]
+stock_earnings = as.matrix(senate_stocks) %*% weights
+auto.arima(y=stock_earnings)
+```

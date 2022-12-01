@@ -1,0 +1,144 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+read the file, senate dataset combined with stock info like sector, price share etc
+```{r}
+df = read.table('C:/Users/nour/updated_senate_data_with_stock_info.csv',sep=',',header = TRUE)
+head(df)
+```
+```{r}
+library(dplyr)
+library(tidyr)
+```
+
+
+
+```{r}
+senate_stocks = read.csv('C:/Users/nour/Downloads/asset_allocation_senate_stocks.csv')#('C:/Users/nour/stock_returns.csv')#('C:/Users/nour/senate_sigma.csv')
+senate_stocks = as.matrix(senate_stocks)
+mu = colMeans(senate_stocks)
+sigma = cov(senate_stocks)
+#sigma = cov(sigma)
+#diag(sigma) <- runif(m)
+solve(sigma)
+```
+
+
+#TODO: need to find stock over time to calculate sigma!! 
+##https://www.kaggle.com/datasets/paultimothymooney/stock-market-data
+finding the weights of the assets senators have purchased -- j
+#TODO: join with senate dataset
+#TODO: find covariances!!!
+#TODO: find Sharpe ratio
+#TODO: pick weights
+```{r}
+library(quadprog) # library for solve.QP
+m = 1000 #length(mu) #50 #219  # no. of points to evaluate
+muP = seq(0,.001,length=m) 
+
+#sigma1 = sigma[1:50,1:50]#diag(m)#sigma[1:50,1:50]#diag(m) #sigma[1:50,1:50]
+sdP = rep(0, length(muP)) # sd of portfolio return
+weight = matrix(0,nrow=m,ncol=10) # storage for portfolio weights
+
+
+for (i in 1:length(muP)) { # find the optimal portfolios
+  result = solve.QP(Dmat=2*sigma,dvec=rep(0,10),  #3
+  Amat = cbind(rep(1,10),mu),bvec=c(1,muP[i]),meq=2)
+  sdP[i] = sqrt(result$value)
+  weight[i,] = result$solution
+}
+
+GMP = which.min(sdP) # global minimum point
+# efficient frontier
+plot(sdP[GMP:m],muP[GMP:m])
+points(sdP[1:(GMP-1)],muP[1:(GMP-1)], type="l", lty = 2,lwd=3, col = "red")
+points(sqrt(diag(sigma)), mu, pch = 4) 
+text(sqrt(diag(sigma))+0.00035, mu, colnames(senate_stocks))
+```
+
+
+```{r}
+colnames(senate_stocks)
+```
+
+```{r}
+
+GMP = which.min(sdP) # global minimum point
+# efficient frontier
+plot(sdP[GMP:m],muP[GMP:m])
+plot(sdP[1:(GMP-1)],muP[1:(GMP-1)], type="l",lty = 2,lwd=3, col = "red")
+plot(sqrt(diag(sigma)), mu, pch = 4,xlim = c(0.012,0.02)) 
+text(sqrt(diag(sigma))+0.00035, mu, colnames(senate_stocks))
+```
+
+
+below is the sharpe ratio, earnings and weights of the efficient frontier of market
+```{r}
+sdP[GMP]
+muP[GMP]
+muP[GMP] / sdP[GMP]
+weight[GMP,]
+```
+
+
+```{r}
+market_stocks = read.csv('C:/Users/nour/Downloads/asset_allocation_market_stocks.csv')
+market_stocks = as.matrix(market_stocks)
+mu = colMeans(market_stocks)
+sigma = cov(market_stocks)
+
+solve(sigma)
+```
+
+```{r}
+library(quadprog) # library for solve.QP
+m = 1000 #length(mu) #50 #219  # no. of points to evaluate
+muP = seq(.001,.004,length=m) 
+
+#sigma1 = sigma[1:50,1:50]#diag(m)#sigma[1:50,1:50]#diag(m) #sigma[1:50,1:50]
+sdP = rep(0, length(muP)) # sd of portfolio return
+weight = matrix(0,nrow=m,ncol=10) # storage for portfolio weights
+
+
+for (i in 1:length(muP)) { # find the optimal portfolios
+  result = solve.QP(Dmat=2*sigma,dvec=rep(0,10),  #3
+  Amat = cbind(rep(1,10),mu),bvec=c(1,muP[i]),meq=2)
+  sdP[i] = sqrt(result$value)
+  weight[i,] = result$solution
+}
+
+GMP = which.min(sdP) # global minimum point
+# efficient frontier
+plot(sdP[GMP:m],muP[GMP:m])
+points(sdP[1:(GMP-1)],muP[1:(GMP-1)], type="l",
+lty = 2,lwd=3, col = "red")
+points(sqrt(diag(sigma)), mu, pch = 4) 
+text(sqrt(diag(sigma))+0.00035, mu, colnames(market_stocks))
+```
+
+
+
+
+```{r}
+GMP = which.min(sdP) # global minimum point
+# efficient frontier
+plot(sdP[GMP:m],muP[GMP:m])
+plot(sdP[1:(GMP-1)],muP[1:(GMP-1)], type="l",
+lty = 2,lwd=3, col = "red")
+plot(sqrt(diag(sigma)), mu, pch = 4) 
+text(sqrt(diag(sigma))+0.1, mu, colnames(market_stocks))
+```
+
+below is the sharpe ratio, earnings and weights of the efficient frontier of market
+```{r}
+GMP
+sdP[GMP]
+muP[GMP]
+muP[GMP] / sdP[GMP]
+weight[GMP,]
+```
+
+
